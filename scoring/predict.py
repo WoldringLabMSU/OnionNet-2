@@ -254,4 +254,4 @@ if __name__ == "__main__":
     t_inf = time.time() - t1 # inference time
     
     pred_df = pd.DataFrame({'prediction': pred_pKa, 'time_featurize_s': t_feat, 'time_inference_s': t_inf})
-    pred_df.to_csv(args.out_fpath, float_format="%.4f")
+    pred_df.to_csv(args.out_fpath, float_format="%.4f", index=False)
