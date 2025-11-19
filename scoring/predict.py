@@ -12,6 +12,7 @@ from collections import OrderedDict
 import re
 from argparse import RawDescriptionHelpFormatter
 import argparse
+import time
 
 def PCC_RMSE(y_true, y_pred):
     global alpha
@@ -230,6 +231,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     rec_fpath = args.rec_fpath
     lig_fpath = args.lig_fpath
+    
+    t0 = time.time()
     shape = shape = [int(x) for x in args.shape.split(",")]
 
     lig_defined_ele = ['H', 'C',  'O', 'N', 'P', 'S', 'Hal', 'DU']
@@ -239,7 +242,8 @@ if __name__ == "__main__":
     X_feat = generate_features(rec_fpath, lig_fpath)
     scaler = joblib.load(args.scaler)
     X_test_std = scaler.transform(X_feat.reshape(1, -1)).reshape([-1] + shape)
-
+    t1 = time.time()
+    t_feat = t1 - t0 # featurization time
     
     model = tf.keras.models.load_model(args.model,
             custom_objects={'RMSE': RMSE,
@@ -247,6 +251,7 @@ if __name__ == "__main__":
                 'PCC_RMSE': PCC_RMSE})
 
     pred_pKa = model.predict(X_test_std).ravel()
-
-    pred_df = pd.DataFrame(pred_pKa, columns=['pred_pKd'])
-    pred_df.to_csv(args.out_fpath, float_format="%.3f")
+    t_inf = time.time() - t1 # inference time
+    
+    pred_df = pd.DataFrame({'prediction': pred_pKa, 'time_featurize_s': t_feat, 'time_inference_s': t_inf})
+    pred_df.to_csv(args.out_fpath, float_format="%.4f")
